@@ -1,7 +1,7 @@
 <?php
 /*
  * Plugin Name: ATR random sku for Woocommerce
- * Version: 1.0
+ * Version: 1.0.0
  * Plugin URI: http://atarimtr.com
  * Description: This plugin adds a button to product edit/new page in Woocommerce that creates a random new sku. The suggested sku is checked against the DB to make sure it is not already taken.
  * Author: Yehuda Tiram
@@ -26,8 +26,6 @@ require_once( 'includes/class-atr-random-sku-for-woocommerce-settings.php' );
 
 // Load plugin libraries
 require_once( 'includes/lib/class-atr-random-sku-for-woocommerce-admin-api.php' );
-require_once( 'includes/lib/class-atr-random-sku-for-woocommerce-post-type.php' );
-require_once( 'includes/lib/class-atr-random-sku-for-woocommerce-taxonomy.php' );
 
 /**
  * Returns the main instance of ATR_random_sku_for_Woocommerce to prevent the need to use globals.

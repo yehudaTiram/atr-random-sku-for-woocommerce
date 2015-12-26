@@ -67,7 +67,7 @@ class ATR_random_sku_for_Woocommerce_Settings {
 	 * @return void
 	 */
 	public function add_menu_item () {
-		$page = add_options_page( __( 'Plugin Settings', 'atr-random-sku-for-woocommerce' ) , __( 'Plugin Settings', 'atr-random-sku-for-woocommerce' ) , 'manage_options' , $this->parent->_token . '_settings' ,  array( $this, 'settings_page' ) );
+		$page = add_options_page( __( 'ATR rand sku Woo', 'atr-random-sku-for-woocommerce' ) , __( 'ATR rand sku Woo', 'atr-random-sku-for-woocommerce' ) , 'manage_options' , $this->parent->_token . '_settings' ,  array( $this, 'settings_page' ) );
 		add_action( 'admin_print_styles-' . $page, array( $this, 'settings_assets' ) );
 	}
 
@@ -278,47 +278,47 @@ class ATR_random_sku_for_Woocommerce_Settings {
 
 		// Build page HTML
 		$html = '<div class="wrap" id="' . $this->parent->_token . '_settings">' . "\n";
-			$html .= '<h2>' . __( 'Plugin Settings' , 'atr-random-sku-for-woocommerce' ) . '</h2>' . "\n";
+			$html .= '<h2>' . __( 'ATR random sku for Woocommerce Settings' , 'atr-random-sku-for-woocommerce' ) . '</h2>' . "\n";
 
-			$tab = '';
-			if ( isset( $_GET['tab'] ) && $_GET['tab'] ) {
-				$tab .= $_GET['tab'];
-			}
-
-			// Show page tabs
-			if ( is_array( $this->settings ) && 1 < count( $this->settings ) ) {
-
-				$html .= '<h2 class="nav-tab-wrapper">' . "\n";
-
-				$c = 0;
-				foreach ( $this->settings as $section => $data ) {
-
-					// Set tab class
-					$class = 'nav-tab';
-					if ( ! isset( $_GET['tab'] ) ) {
-						if ( 0 == $c ) {
-							$class .= ' nav-tab-active';
-						}
-					} else {
-						if ( isset( $_GET['tab'] ) && $section == $_GET['tab'] ) {
-							$class .= ' nav-tab-active';
-						}
-					}
-
-					// Set tab link
-					$tab_link = add_query_arg( array( 'tab' => $section ) );
-					if ( isset( $_GET['settings-updated'] ) ) {
-						$tab_link = remove_query_arg( 'settings-updated', $tab_link );
-					}
-
-					// Output tab
-					$html .= '<a href="' . $tab_link . '" class="' . esc_attr( $class ) . '">' . esc_html( $data['title'] ) . '</a>' . "\n";
-
-					++$c;
-				}
-
-				$html .= '</h2>' . "\n";
-			}
+//			$tab = '';
+//			if ( isset( $_GET['tab'] ) && $_GET['tab'] ) {
+//				$tab .= $_GET['tab'];
+//			}
+//
+//			// Show page tabs
+//			if ( is_array( $this->settings ) && 1 < count( $this->settings ) ) {
+//
+//				$html .= '<h2 class="nav-tab-wrapper">' . "\n";
+//
+//				$c = 0;
+//				foreach ( $this->settings as $section => $data ) {
+//
+//					// Set tab class
+//					$class = 'nav-tab';
+//					if ( ! isset( $_GET['tab'] ) ) {
+//						if ( 0 == $c ) {
+//							$class .= ' nav-tab-active';
+//						}
+//					} else {
+//						if ( isset( $_GET['tab'] ) && $section == $_GET['tab'] ) {
+//							$class .= ' nav-tab-active';
+//						}
+//					}
+//
+//					// Set tab link
+//					$tab_link = add_query_arg( array( 'tab' => $section ) );
+//					if ( isset( $_GET['settings-updated'] ) ) {
+//						$tab_link = remove_query_arg( 'settings-updated', $tab_link );
+//					}
+//
+//					// Output tab
+//					$html .= '<a href="' . $tab_link . '" class="' . esc_attr( $class ) . '">' . esc_html( $data['title'] ) . '</a>' . "\n";
+//
+//					++$c;
+//				}
+//
+//				$html .= '</h2>' . "\n";
+//			}
 
 			$html .= '<form method="post" action="options.php" enctype="multipart/form-data">' . "\n";
 

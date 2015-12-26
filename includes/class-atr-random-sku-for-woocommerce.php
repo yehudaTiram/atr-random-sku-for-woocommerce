@@ -1,275 +1,316 @@
 <?php
-
-if ( ! defined( 'ABSPATH' ) ) exit;
+if (!defined('ABSPATH'))
+    exit;
 
 class ATR_random_sku_for_Woocommerce {
 
-	/**
-	 * The single instance of ATR_random_sku_for_Woocommerce.
-	 * @var 	object
-	 * @access  private
-	 * @since 	1.0.0
-	 */
-	private static $_instance = null;
+    /**
+     * The single instance of ATR_random_sku_for_Woocommerce.
+     * @var 	object
+     * @access  private
+     * @since 	1.0.0
+     */
+    private static $_instance = null;
 
-	/**
-	 * Settings class object
-	 * @var     object
-	 * @access  public
-	 * @since   1.0.0
-	 */
-	public $settings = null;
+    /**
+     * Settings class object
+     * @var     object
+     * @access  public
+     * @since   1.0.0
+     */
+    public $settings = null;
 
-	/**
-	 * The version number.
-	 * @var     string
-	 * @access  public
-	 * @since   1.0.0
-	 */
-	public $_version;
+    /**
+     * The version number.
+     * @var     string
+     * @access  public
+     * @since   1.0.0
+     */
+    public $_version;
 
-	/**
-	 * The token.
-	 * @var     string
-	 * @access  public
-	 * @since   1.0.0
-	 */
-	public $_token;
+    /**
+     * The token.
+     * @var     string
+     * @access  public
+     * @since   1.0.0
+     */
+    public $_token;
 
-	/**
-	 * The main plugin file.
-	 * @var     string
-	 * @access  public
-	 * @since   1.0.0
-	 */
-	public $file;
+    /**
+     * The main plugin file.
+     * @var     string
+     * @access  public
+     * @since   1.0.0
+     */
+    public $file;
 
-	/**
-	 * The main plugin directory.
-	 * @var     string
-	 * @access  public
-	 * @since   1.0.0
-	 */
-	public $dir;
+    /**
+     * The main plugin directory.
+     * @var     string
+     * @access  public
+     * @since   1.0.0
+     */
+    public $dir;
 
-	/**
-	 * The plugin assets directory.
-	 * @var     string
-	 * @access  public
-	 * @since   1.0.0
-	 */
-	public $assets_dir;
+    /**
+     * The plugin assets directory.
+     * @var     string
+     * @access  public
+     * @since   1.0.0
+     */
+    public $assets_dir;
 
-	/**
-	 * The plugin assets URL.
-	 * @var     string
-	 * @access  public
-	 * @since   1.0.0
-	 */
-	public $assets_url;
+    /**
+     * The plugin assets URL.
+     * @var     string
+     * @access  public
+     * @since   1.0.0
+     */
+    public $assets_url;
 
-	/**
-	 * Suffix for Javascripts.
-	 * @var     string
-	 * @access  public
-	 * @since   1.0.0
-	 */
-	public $script_suffix;
+    /**
+     * Suffix for Javascripts.
+     * @var     string
+     * @access  public
+     * @since   1.0.0
+     */
+    public $script_suffix;
 
-	/**
-	 * Constructor function.
-	 * @access  public
-	 * @since   1.0.0
-	 * @return  void
-	 */
-	public function __construct ( $file = '', $version = '1.0.0' ) {
-		$this->_version = $version;
-		$this->_token = 'atr_random_sku_for_woocommerce';
+    /**
+     * Constructor function.
+     * @access  public
+     * @since   1.0.0
+     * @return  void
+     */
+    public function __construct($file = '', $version = '1.0.0') {
 
-		// Load plugin environment variables
-		$this->file = $file;
-		$this->dir = dirname( $this->file );
-		$this->assets_dir = trailingslashit( $this->dir ) . 'assets';
-		$this->assets_url = esc_url( trailingslashit( plugins_url( '/assets/', $this->file ) ) );
+        $this->_version = $version;
+        $this->_token = 'atr_random_sku_for_woocommerce';
 
-		$this->script_suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+        // Load plugin environment variables
+        $this->file = $file;
+        $this->dir = dirname($this->file);
+        $this->assets_dir = trailingslashit($this->dir) . 'assets';
+        $this->assets_url = esc_url(trailingslashit(plugins_url('/assets/', $this->file)));
 
-		register_activation_hook( $this->file, array( $this, 'install' ) );
+        $this->script_suffix = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '' : '.min';
 
-		// Load frontend JS & CSS
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_styles' ), 10 );
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
+        register_activation_hook($this->file, array($this, 'install'));
 
-		// Load admin JS & CSS
-		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ), 10, 1 );
-		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_styles' ), 10, 1 );
+        // Load admin JS & CSS
+        //add_action('admin_enqueue_scripts', array($this, 'admin_enqueue_scripts'), 10, 1);
+        //add_action('admin_enqueue_scripts', array($this, 'admin_enqueue_styles'), 10, 1);
+        // Load API for generic admin functions
+        if (is_admin()) {
+            $this->admin = new ATR_random_sku_for_Woocommerce_Admin_API();
+        }
 
-		// Load API for generic admin functions
-		if ( is_admin() ) {
-			$this->admin = new ATR_random_sku_for_Woocommerce_Admin_API();
-		}
+        // Handle localisation
+        $this->load_plugin_textdomain();
+        add_action('init', array($this, 'load_localisation'), 0);
 
-		// Handle localisation
-		$this->load_plugin_textdomain();
-		add_action( 'init', array( $this, 'load_localisation' ), 0 );
-	} // End __construct ()
+        // Add auto sku button to product edit page
+        add_action('woocommerce_product_options_general_product_data', array($this, 'woo_add_custom_general_fields'));
 
-	/**
-	 * Wrapper function to register a new post type
-	 * @param  string $post_type   Post type name
-	 * @param  string $plural      Post type item plural name
-	 * @param  string $single      Post type item single name
-	 * @param  string $description Description of post type
-	 * @return object              Post type class object
-	 */
-	public function register_post_type ( $post_type = '', $plural = '', $single = '', $description = '', $options = array() ) {
+        // **** Check if the suggested sku exist in DB *****
+        add_action('admin_footer', array($this, 'my_action_javascript'));
+        add_action('wp_ajax_my_action', array($this, 'atr_get_sku_callback'));
+    }
 
-		if ( ! $post_type || ! $plural || ! $single ) return;
+// End __construct ()
+ 
+    // Add auto sku button to product edit page
+    public function woo_add_custom_general_fields() {
 
-		$post_type = new ATR_random_sku_for_Woocommerce_Post_Type( $post_type, $plural, $single, $description, $options );
+        global $woocommerce, $post;
 
-		return $post_type;
-	}
+        echo '<div class="options_group">';
+        ?>
+        <input id="auto-sku" type="button" class="button" value="auto sku" />&nbsp;&nbsp;
+        <input id="test_sku0" type="radio" value="0" name="test_sku" checked /><?php _e('random') ?>&nbsp;
+        <input id="test_sku1" type="radio" value="1" name="test_sku" /><?php _e('just check') ?>&nbsp;<p class="auto_sku_message">Select option and click the button.<br />"random" will replace the sku with random one and will check it.<br /> "just check" will check the sku without replacing it in the textbox.</p>
+        <?php
+        echo '</div>';
+    }
 
-	/**
-	 * Wrapper function to register a new taxonomy
-	 * @param  string $taxonomy   Taxonomy name
-	 * @param  string $plural     Taxonomy single name
-	 * @param  string $single     Taxonomy plural name
-	 * @param  array  $post_types Post types to which this taxonomy applies
-	 * @return object             Taxonomy class object
-	 */
-	public function register_taxonomy ( $taxonomy = '', $plural = '', $single = '', $post_types = array(), $taxonomy_args = array() ) {
+    // **** Check if the suggested sku exist in DB *****
+    function my_action_javascript() {
+        ?>
+        <script type="text/javascript" >
+            jQuery(document).ready(function ($) {
+                // onload - fir refresh page
+                if ($("#test_sku0").attr("checked"))
+                    jQuery('#auto-sku').prop('value', 'auto sku');
+                else
+                    jQuery('#auto-sku').prop('value', 'check sku ');
+                // On radio change
+                $("input[name=test_sku]:radio").change(function () {
+                    if ($("#test_sku0").attr("checked"))
+                        jQuery('#auto-sku').prop('value', 'auto sku');
+                    else
+                        jQuery('#auto-sku').prop('value', 'check sku ');
+                    //$('#log').val($('#log').val()+ $(this).val() + '|');
+                })
+                jQuery('#auto-sku').click(function (event) {
+                    event.preventDefault();
+                    var random_id_check;
+                    var test_skuValue = jQuery("input[name='test_sku']:checked").val();
+                    if ((!jQuery('#_sku').val().length > 0) && (test_skuValue == '1')) {
+                        alert('sku is empty!');
+                    } else {
+                        if (test_skuValue == '0') {
+                            random_id_check = <?php $random_number = 'makeid()';
+        echo $random_number; ?>
+                        } else {
+                            random_id_check = jQuery('#_sku').val();
+                        }
+                        var data = {
+                            'action': 'my_action',
+                            'sku_to_pass': random_id_check
+                        };
+                        //var random_id_check = randomNumberFromRange(100000, 999999);
+                        jQuery.post(ajaxurl, data, function (response) {
+                            if (response == '') {
+                                jQuery('#_sku').val(random_id_check);
+                                //jQuery('#auto-sku').prop('value', 'Random sku: ' + jQuery('#_sku').val() + ' not exists! You can use it.');
+                                jQuery('.auto_sku_message').text(jQuery('#_sku').val() + ' not exists! You can use it.');
+                                jQuery('.auto_sku_message').css('color', 'green');
+                            } else {
+                                jQuery('.auto_sku_message').text(response + ' already exists! Please click again.');
+                                jQuery('.auto_sku_message').css('color', 'red');
+                            }
+                        });
+                    }
 
-		if ( ! $taxonomy || ! $plural || ! $single ) return;
 
-		$taxonomy = new ATR_random_sku_for_Woocommerce_Taxonomy( $taxonomy, $plural, $single, $post_types, $taxonomy_args );
+                    //var random_id_check = <?php //$random_number = 'makeid()'; echo $random_number;         ?>;
+                    //var random_id_check = jQuery('#_sku').val(); // For TEST only
 
-		return $taxonomy;
-	}
 
-	/**
-	 * Load frontend CSS.
-	 * @access  public
-	 * @since   1.0.0
-	 * @return void
-	 */
-	public function enqueue_styles () {
-		wp_register_style( $this->_token . '-frontend', esc_url( $this->assets_url ) . 'css/frontend.css', array(), $this->_version );
-		wp_enqueue_style( $this->_token . '-frontend' );
-	} // End enqueue_styles ()
+                });
+            });
 
-	/**
-	 * Load frontend Javascript.
-	 * @access  public
-	 * @since   1.0.0
-	 * @return  void
-	 */
-	public function enqueue_scripts () {
-		wp_register_script( $this->_token . '-frontend', esc_url( $this->assets_url ) . 'js/frontend' . $this->script_suffix . '.js', array( 'jquery' ), $this->_version );
-		wp_enqueue_script( $this->_token . '-frontend' );
-	} // End enqueue_scripts ()
+            // generate random sku and write it in the sku textbox
+            function randomNumberFromRange(min, max)
+            {
+                var randomNumber = Math.floor(Math.random() * (max - min + 1) + min);
 
-	/**
-	 * Load admin CSS.
-	 * @access  public
-	 * @since   1.0.0
-	 * @return  void
-	 */
-	public function admin_enqueue_styles ( $hook = '' ) {
-		wp_register_style( $this->_token . '-admin', esc_url( $this->assets_url ) . 'css/admin.css', array(), $this->_version );
-		wp_enqueue_style( $this->_token . '-admin' );
-	} // End admin_enqueue_styles ()
+                return randomNumber;
+            }
+            function makeid()
+            {
+                var text = "";
+                //var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                var possible = "0123456789";
+                for (var i = 0; i < 5; i++)
+                    text += possible.charAt(Math.floor(Math.random() * possible.length));
 
-	/**
-	 * Load admin Javascript.
-	 * @access  public
-	 * @since   1.0.0
-	 * @return  void
-	 */
-	public function admin_enqueue_scripts ( $hook = '' ) {
-		wp_register_script( $this->_token . '-admin', esc_url( $this->assets_url ) . 'js/admin' . $this->script_suffix . '.js', array( 'jquery' ), $this->_version );
-		wp_enqueue_script( $this->_token . '-admin' );
-	} // End admin_enqueue_scripts ()
+                return text;
+            }
+        </script> 
+        <?php
+    }
 
-	/**
-	 * Load plugin localisation
-	 * @access  public
-	 * @since   1.0.0
-	 * @return  void
-	 */
-	public function load_localisation () {
-		load_plugin_textdomain( 'atr-random-sku-for-woocommerce', false, dirname( plugin_basename( $this->file ) ) . '/lang/' );
-	} // End load_localisation ()
+    function atr_get_sku_callback() {
+        global $wpdb;
+        $sku = strval($_POST['sku_to_pass']);
+        $product_id = $wpdb->get_var($wpdb->prepare("SELECT meta_value FROM $wpdb->postmeta WHERE meta_key='_sku' AND meta_value= %s LIMIT 1", $sku));
+        wp_reset_query();
+        echo $product_id;
+        wp_die(); // this is required to terminate immediately and return a proper response
+    }
 
-	/**
-	 * Load plugin textdomain
-	 * @access  public
-	 * @since   1.0.0
-	 * @return  void
-	 */
-	public function load_plugin_textdomain () {
-	    $domain = 'atr-random-sku-for-woocommerce';
+    /**
+     * Load plugin localisation
+     * @access  public
+     * @since   1.0.0
+     * @return  void
+     */
+    public function load_localisation() {
+        load_plugin_textdomain('atr-random-sku-for-woocommerce', false, dirname(plugin_basename($this->file)) . '/lang/');
+    }
 
-	    $locale = apply_filters( 'plugin_locale', get_locale(), $domain );
+// End load_localisation ()
 
-	    load_textdomain( $domain, WP_LANG_DIR . '/' . $domain . '/' . $domain . '-' . $locale . '.mo' );
-	    load_plugin_textdomain( $domain, false, dirname( plugin_basename( $this->file ) ) . '/lang/' );
-	} // End load_plugin_textdomain ()
+    /**
+     * Load plugin textdomain
+     * @access  public
+     * @since   1.0.0
+     * @return  void
+     */
+    public function load_plugin_textdomain() {
+        $domain = 'atr-random-sku-for-woocommerce';
 
-	/**
-	 * Main ATR_random_sku_for_Woocommerce Instance
-	 *
-	 * Ensures only one instance of ATR_random_sku_for_Woocommerce is loaded or can be loaded.
-	 *
-	 * @since 1.0.0
-	 * @static
-	 * @see ATR_random_sku_for_Woocommerce()
-	 * @return Main ATR_random_sku_for_Woocommerce instance
-	 */
-	public static function instance ( $file = '', $version = '1.0.0' ) {
-		if ( is_null( self::$_instance ) ) {
-			self::$_instance = new self( $file, $version );
-		}
-		return self::$_instance;
-	} // End instance ()
+        $locale = apply_filters('plugin_locale', get_locale(), $domain);
 
-	/**
-	 * Cloning is forbidden.
-	 *
-	 * @since 1.0.0
-	 */
-	public function __clone () {
-		_doing_it_wrong( __FUNCTION__, __( 'Cheatin&#8217; huh?' ), $this->_version );
-	} // End __clone ()
+        load_textdomain($domain, WP_LANG_DIR . '/' . $domain . '/' . $domain . '-' . $locale . '.mo');
+        load_plugin_textdomain($domain, false, dirname(plugin_basename($this->file)) . '/lang/');
+    }
 
-	/**
-	 * Unserializing instances of this class is forbidden.
-	 *
-	 * @since 1.0.0
-	 */
-	public function __wakeup () {
-		_doing_it_wrong( __FUNCTION__, __( 'Cheatin&#8217; huh?' ), $this->_version );
-	} // End __wakeup ()
+// End load_plugin_textdomain ()
 
-	/**
-	 * Installation. Runs on activation.
-	 * @access  public
-	 * @since   1.0.0
-	 * @return  void
-	 */
-	public function install () {
-		$this->_log_version_number();
-	} // End install ()
+    /**
+     * Main ATR_random_sku_for_Woocommerce Instance
+     *
+     * Ensures only one instance of ATR_random_sku_for_Woocommerce is loaded or can be loaded.
+     *
+     * @since 1.0.0
+     * @static
+     * @see ATR_random_sku_for_Woocommerce()
+     * @return Main ATR_random_sku_for_Woocommerce instance
+     */
+    public static function instance($file = '', $version = '1.0.0') {
+        if (is_null(self::$_instance)) {
+            self::$_instance = new self($file, $version);
+        }
+        return self::$_instance;
+    }
 
-	/**
-	 * Log the plugin version number.
-	 * @access  public
-	 * @since   1.0.0
-	 * @return  void
-	 */
-	private function _log_version_number () {
-		update_option( $this->_token . '_version', $this->_version );
-	} // End _log_version_number ()
+// End instance ()
 
+    /**
+     * Cloning is forbidden.
+     *
+     * @since 1.0.0
+     */
+    public function __clone() {
+        _doing_it_wrong(__FUNCTION__, __('Cheatin&#8217; huh?'), $this->_version);
+    }
+
+// End __clone ()
+
+    /**
+     * Unserializing instances of this class is forbidden.
+     *
+     * @since 1.0.0
+     */
+    public function __wakeup() {
+        _doing_it_wrong(__FUNCTION__, __('Cheatin&#8217; huh?'), $this->_version);
+    }
+
+// End __wakeup ()
+
+    /**
+     * Installation. Runs on activation.
+     * @access  public
+     * @since   1.0.0
+     * @return  void
+     */
+    public function install() {
+        $this->_log_version_number();
+    }
+
+// End install ()
+
+    /**
+     * Log the plugin version number.
+     * @access  public
+     * @since   1.0.0
+     * @return  void
+     */
+    private function _log_version_number() {
+        update_option($this->_token . '_version', $this->_version);
+    }
+
+// End _log_version_number ()
 }
