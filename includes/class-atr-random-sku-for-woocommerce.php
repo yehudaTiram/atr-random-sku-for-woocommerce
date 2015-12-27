@@ -104,7 +104,8 @@ class ATR_random_sku_for_Woocommerce {
         if (is_admin()) {
             $this->admin = new ATR_random_sku_for_Woocommerce_Admin_API();
         }
-
+        add_action('admin_enqueue_scripts', array($this, 'admin_enqueue_scripts'), 10, 1);
+        add_action('admin_enqueue_scripts', array($this, 'admin_enqueue_styles'), 10, 1);
         // Handle localisation
         $this->load_plugin_textdomain();
         add_action('init', array($this, 'load_localisation'), 0);
@@ -113,12 +114,11 @@ class ATR_random_sku_for_Woocommerce {
         add_action('woocommerce_product_options_general_product_data', array($this, 'woo_add_custom_general_fields'));
 
         // **** Check if the suggested sku exist in DB *****
-        add_action('admin_footer', array($this, 'my_action_javascript'));
-        add_action('wp_ajax_my_action', array($this, 'atr_get_sku_callback'));
+        add_action('admin_footer', array($this, 'atr_check_sku_action_javascript'));
+        add_action('wp_ajax_atr_check_sku_action', array($this, 'atr_check_sku_callback'));
     }
 
 // End __construct ()
- 
     // Add auto sku button to product edit page
     public function woo_add_custom_general_fields() {
 
@@ -126,19 +126,27 @@ class ATR_random_sku_for_Woocommerce {
 
         echo '<div class="options_group">';
         ?>
-        <input id="auto-sku" type="button" class="button" value="auto sku" />&nbsp;&nbsp;
-        <input id="test_sku0" type="radio" value="0" name="test_sku" checked /><?php _e('random') ?>&nbsp;
-        <input id="test_sku1" type="radio" value="1" name="test_sku" /><?php _e('just check') ?>&nbsp;<p class="auto_sku_message">Select option and click the button.<br />"random" will replace the sku with random one and will check it.<br /> "just check" will check the sku without replacing it in the textbox.</p>
-        <?php
-        echo '</div>';
-    }
 
-    // **** Check if the suggested sku exist in DB *****
-    function my_action_javascript() {
-        ?>
+<table >
+  <tr>
+    <th rowspan="2"><input id="auto-sku" type="button" class="button" value="auto sku" /></th>
+    <td><input id="test_sku0" type="radio" value="0" name="test_sku" /><?php _e('Generate random SKU') ?>&nbsp;<input type="checkbox" name="overwrite" class="overwrite" value="no">Over write sku textbox<br /></td>
+  </tr>
+  <tr>
+    <td><input id="test_sku1" type="radio" value="1" name="test_sku" checked /><?php _e('just check current SKU') ?></td>
+  </tr>
+</table>
+        <p class="auto_sku_message">Select option and click the button.<br />"random" will replace the sku with random one and will check it.<br /> "just check" will check the sku without replacing it in the textbox.</p>
+            <?php
+            echo '</div>';
+        }
+
+        // **** Check if the suggested sku exist in DB *****
+        function atr_check_sku_action_javascript() {
+            ?>
         <script type="text/javascript" >
             jQuery(document).ready(function ($) {
-                // onload - fir refresh page
+                // onload
                 if ($("#test_sku0").attr("checked"))
                     jQuery('#auto-sku').prop('value', 'auto sku');
                 else
@@ -155,35 +163,71 @@ class ATR_random_sku_for_Woocommerce {
                     event.preventDefault();
                     var random_id_check;
                     var test_skuValue = jQuery("input[name='test_sku']:checked").val();
-                    if ((!jQuery('#_sku').val().length > 0) && (test_skuValue == '1')) {
+                    if ((!jQuery('#_sku').val().length > 0) && (test_skuValue === '1')) {
                         alert('sku is empty!');
                     } else {
-                        if (test_skuValue == '0') {
-                            random_id_check = <?php $random_number = 'makeid()';
-        echo $random_number; ?>
+                        if (test_skuValue === '0') {
+                            random_id_check = <?php
+        $random_number = '';
+        if (get_option('atr_select_sku_format') === 'charactersforsku') {
+            if ((get_option('atr_sku_length') != '') && (get_option('atr_characters_for_SKU') != ''))  {
+                $sku_characters = get_option('atr_characters_for_SKU');
+                $sku_length = get_option('atr_sku_length');
+                $random_number = 'makeid("' . $sku_characters . '",' . $sku_length . ')';
+            } else {
+                $random_number = 'makeid("abcdefghijklmnopqrstuvwxyz0123456789", 8)';
+            }
+        }
+        if (get_option('atr_select_sku_format') === 'maxminsku') {
+            //$random_number = 'randomNumberFromRange(100000000, 999999999)';
+            if ((get_option('atr_min_number_for_number') != '') && (get_option('atr_max_number_for_number') != '') ) {
+                $min_num = get_option('atr_min_number_for_number');
+                $max_num = get_option('atr_max_number_for_number');
+                $random_number = 'randomNumberFromRange(' . $min_num . ',' . $max_num . ')';
+            } else {
+                $random_number = 'randomNumberFromRange(100000000, 999999999)';
+            }
+        }
+//$random_number = 'makeid()';
+//$random_number = rand(100000,999999); 
+        echo $random_number;
+        ?>
                         } else {
                             random_id_check = jQuery('#_sku').val();
                         }
                         var data = {
-                            'action': 'my_action',
+                            'action': 'atr_check_sku_action',
                             'sku_to_pass': random_id_check
                         };
                         //var random_id_check = randomNumberFromRange(100000, 999999);
                         jQuery.post(ajaxurl, data, function (response) {
-                            if (response == '') {
-                                jQuery('#_sku').val(random_id_check);
+                            if (response === '0') { // select count = 0 no much sku found in db
+                                if (jQuery('#_sku').val().length > 0) {
+                                    if (jQuery('.overwrite').prop("checked") == true) {
+                                        jQuery('.auto_sku_message').html('<span style="color:blue;font-weight:bold;">' + random_id_check + '</span> not exists! Pasted to sku field.');
+                                        jQuery('#_sku').val(random_id_check);
+                                        //alert("no-overwrite is checked.");
+                                    } else {
+                                        jQuery('.auto_sku_message').html('<span style="color:blue;font-weight:bold;">' + random_id_check + '</span> not exists! You can copy paste it. ');
+                                        //alert("no-overwrite is unchecked.");
+                                    }
+                                } else {
+                                    jQuery('#_sku').val(random_id_check);
+                                    jQuery('.auto_sku_message').html(random_id_check + ' not exists! Pasted to sku field.');
+                                }
+
                                 //jQuery('#auto-sku').prop('value', 'Random sku: ' + jQuery('#_sku').val() + ' not exists! You can use it.');
-                                jQuery('.auto_sku_message').text(jQuery('#_sku').val() + ' not exists! You can use it.');
+
                                 jQuery('.auto_sku_message').css('color', 'green');
-                            } else {
-                                jQuery('.auto_sku_message').text(response + ' already exists! Please click again.');
+                            } else { // select count > 0
+                                jQuery('.auto_sku_message').html('<span style="color:blue;font-weight:bold;">' + random_id_check + '</span> already exists! Found ' + response + ' products with this sku');
                                 jQuery('.auto_sku_message').css('color', 'red');
                             }
                         });
                     }
 
 
-                    //var random_id_check = <?php //$random_number = 'makeid()'; echo $random_number;         ?>;
+                    //var random_id_check = <?php //$random_number = 'makeid()'; echo $random_number;            ?>;
                     //var random_id_check = jQuery('#_sku').val(); // For TEST only
 
 
@@ -194,15 +238,15 @@ class ATR_random_sku_for_Woocommerce {
             function randomNumberFromRange(min, max)
             {
                 var randomNumber = Math.floor(Math.random() * (max - min + 1) + min);
-
                 return randomNumber;
             }
-            function makeid()
+            function makeid(possible, sku_length)
             {
                 var text = "";
-                //var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-                var possible = "0123456789";
-                for (var i = 0; i < 5; i++)
+                //var possible = "abcdefghijklmnopqrstuvwxyz0123456789";
+                    <?php //if (!get_option('min_number_for_number'))  ?>
+                //var possible = "abcdefghijklmnopqrstuvwxyz0123456789";
+                for (var i = 0; i < sku_length; i++)
                     text += possible.charAt(Math.floor(Math.random() * possible.length));
 
                 return text;
@@ -211,15 +255,52 @@ class ATR_random_sku_for_Woocommerce {
         <?php
     }
 
-    function atr_get_sku_callback() {
+//    function getRandomString($length = 8) {
+//        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+//        $string = '';
+//
+//        for ($i = 0; $i < $length; $i++) {
+//            $string .= $characters[mt_rand(0, strlen($characters) - 1)];
+//        }
+//
+//        return $string;
+//    }
+
+    function atr_check_sku_callback() {
         global $wpdb;
         $sku = strval($_POST['sku_to_pass']);
-        $product_id = $wpdb->get_var($wpdb->prepare("SELECT meta_value FROM $wpdb->postmeta WHERE meta_key='_sku' AND meta_value= %s LIMIT 1", $sku));
+        //$product_id = $wpdb->get_var($wpdb->prepare("SELECT meta_value FROM $wpdb->postmeta WHERE meta_key='_sku' AND meta_value= %s LIMIT 1", $sku));
+        $product_id = $wpdb->get_var($wpdb->prepare("SELECT count(meta_value) FROM $wpdb->postmeta WHERE meta_key='_sku' AND meta_value= %s LIMIT 1", $sku));
         wp_reset_query();
         echo $product_id;
         wp_die(); // this is required to terminate immediately and return a proper response
     }
 
+    /**
+     * Load admin CSS.
+     * @access  public
+     * @since   1.0.0
+     * @return  void
+     */
+    public function admin_enqueue_styles($hook = '') {
+        wp_register_style($this->_token . '-admin', esc_url($this->assets_url) . 'css/admin.css', array(), $this->_version);
+        wp_enqueue_style($this->_token . '-admin');
+    }
+
+// End admin_enqueue_styles ()
+
+    /**
+     * Load admin Javascript.
+     * @access  public
+     * @since   1.0.0
+     * @return  void
+     */
+    public function admin_enqueue_scripts($hook = '') {
+        wp_register_script($this->_token . '-admin', esc_url($this->assets_url) . 'js/admin' . $this->script_suffix . '.js', array('jquery'), $this->_version);
+        wp_enqueue_script($this->_token . '-admin');
+    }
+
+// End admin_enqueue_scripts ()
     /**
      * Load plugin localisation
      * @access  public

@@ -39,7 +39,7 @@ class ATR_random_sku_for_Woocommerce_Settings {
 	public function __construct ( $parent ) {
 		$this->parent = $parent;
 
-		$this->base = 'wpt_';
+		$this->base = 'atr_';
 
 		// Initialise settings
 		add_action( 'init', array( $this, 'init_settings' ), 11 );
@@ -68,27 +68,9 @@ class ATR_random_sku_for_Woocommerce_Settings {
 	 */
 	public function add_menu_item () {
 		$page = add_options_page( __( 'ATR rand sku Woo', 'atr-random-sku-for-woocommerce' ) , __( 'ATR rand sku Woo', 'atr-random-sku-for-woocommerce' ) , 'manage_options' , $this->parent->_token . '_settings' ,  array( $this, 'settings_page' ) );
-		add_action( 'admin_print_styles-' . $page, array( $this, 'settings_assets' ) );
 	}
 
-	/**
-	 * Load settings JS & CSS
-	 * @return void
-	 */
-	public function settings_assets () {
 
-		// We're including the farbtastic script & styles here because they're needed for the colour picker
-		// If you're not including a colour picker field then you can leave these calls out as well as the farbtastic dependency for the wpt-admin-js script below
-		wp_enqueue_style( 'farbtastic' );
-    	wp_enqueue_script( 'farbtastic' );
-
-    	// We're including the WP media scripts here because they're needed for the image upload field
-    	// If you're not including an image upload then you can leave this function call out
-    	wp_enqueue_media();
-
-    	wp_register_script( $this->parent->_token . '-settings-js', $this->parent->assets_url . 'js/settings' . $this->parent->script_suffix . '.js', array( 'farbtastic', 'jquery' ), '1.0.0' );
-    	wp_enqueue_script( $this->parent->_token . '-settings-js' );
-	}
 
 	/**
 	 * Add settings link to plugin list table
@@ -108,112 +90,57 @@ class ATR_random_sku_for_Woocommerce_Settings {
 	private function settings_fields () {
 
 		$settings['standard'] = array(
-			'title'					=> __( 'Standard', 'atr-random-sku-for-woocommerce' ),
-			'description'			=> __( 'These are fairly standard form input fields.', 'atr-random-sku-for-woocommerce' ),
+			'title'					=> __( 'Options', 'atr-random-sku-for-woocommerce' ),
+			'description'			=> __( 'Set your preferences', 'atr-random-sku-for-woocommerce' ),
 			'fields'				=> array(
+ 				array(
+					'id' 			=> 'select_sku_format',
+					'label'			=> __( 'Use a number for SKU', 'wordpress-plugin-template' ),
+					'description'           => __( 'Select SKU format as a number or as a string. Set the relevant options in the following fields.', 'wordpress-plugin-template' ),
+					'type'			=> 'radio',
+					'options'		=> array( 'maxminsku' => 'Use max min', 'charactersforsku' => 'Use string' ),
+					'default'		=> 'charactersforsku'
+				),   
 				array(
-					'id' 			=> 'text_field',
-					'label'			=> __( 'Some Text' , 'atr-random-sku-for-woocommerce' ),
-					'description'	=> __( 'This is a standard text field.', 'atr-random-sku-for-woocommerce' ),
+					'id' 			=> 'min_number_for_number',
+					'label'			=> __( 'Write min number' , 'wordpress-plugin-template' ),
+					'description'           => __( 'Use this min number for SKU', 'wordpress-plugin-template' ),
+					'type'			=> 'number',
+					'default'		=> '100000000',
+					'placeholder'           => __( '100000000', 'wordpress-plugin-template' )
+				),                             
+				array(
+					'id' 			=> 'max_number_for_number',
+					'label'			=> __( 'Write max number' , 'wordpress-plugin-template' ),
+					'description'           => __( 'Use this max number for SKU', 'wordpress-plugin-template' ),
+					'type'			=> 'number',
+					'default'		=> '999999999',
+					'placeholder'           => __( '999999999', 'wordpress-plugin-template' )
+				),                             
+  
+				array(
+					'id' 			=> 'characters_for_SKU',
+					'label'			=> __( 'Characters for SKU' , 'wordpress-plugin-template' ),
+					'description'           => __( 'The SKU contains only these characters.', 'wordpress-plugin-template' ),
 					'type'			=> 'text',
 					'default'		=> '',
-					'placeholder'	=> __( 'Placeholder text', 'atr-random-sku-for-woocommerce' )
-				),
+					'placeholder'           => __( 'abcdefghijklmnopqrstuvwxyz0123456789', 'wordpress-plugin-template' )
+				), 
 				array(
-					'id' 			=> 'password_field',
-					'label'			=> __( 'A Password' , 'atr-random-sku-for-woocommerce' ),
-					'description'	=> __( 'This is a standard password field.', 'atr-random-sku-for-woocommerce' ),
-					'type'			=> 'password',
+					'id' 			=> 'sku_length',
+					'label'			=> __( 'SKU length' , 'wordpress-plugin-template' ),
+					'description'           => __( 'Use this length for SKU', 'wordpress-plugin-template' ),
+					'type'			=> 'number',
 					'default'		=> '',
-					'placeholder'	=> __( 'Placeholder text', 'atr-random-sku-for-woocommerce' )
-				),
-				array(
-					'id' 			=> 'secret_text_field',
-					'label'			=> __( 'Some Secret Text' , 'atr-random-sku-for-woocommerce' ),
-					'description'	=> __( 'This is a secret text field - any data saved here will not be displayed after the page has reloaded, but it will be saved.', 'atr-random-sku-for-woocommerce' ),
-					'type'			=> 'text_secret',
-					'default'		=> '',
-					'placeholder'	=> __( 'Placeholder text', 'atr-random-sku-for-woocommerce' )
-				),
-				array(
-					'id' 			=> 'text_block',
-					'label'			=> __( 'A Text Block' , 'atr-random-sku-for-woocommerce' ),
-					'description'	=> __( 'This is a standard text area.', 'atr-random-sku-for-woocommerce' ),
-					'type'			=> 'textarea',
-					'default'		=> '',
-					'placeholder'	=> __( 'Placeholder text for this textarea', 'atr-random-sku-for-woocommerce' )
-				),
-				array(
-					'id' 			=> 'single_checkbox',
-					'label'			=> __( 'An Option', 'atr-random-sku-for-woocommerce' ),
-					'description'	=> __( 'A standard checkbox - if you save this option as checked then it will store the option as \'on\', otherwise it will be an empty string.', 'atr-random-sku-for-woocommerce' ),
-					'type'			=> 'checkbox',
-					'default'		=> ''
-				),
-				array(
-					'id' 			=> 'select_box',
-					'label'			=> __( 'A Select Box', 'atr-random-sku-for-woocommerce' ),
-					'description'	=> __( 'A standard select box.', 'atr-random-sku-for-woocommerce' ),
-					'type'			=> 'select',
-					'options'		=> array( 'drupal' => 'Drupal', 'joomla' => 'Joomla', 'wordpress' => 'WordPress' ),
-					'default'		=> 'wordpress'
-				),
-				array(
-					'id' 			=> 'radio_buttons',
-					'label'			=> __( 'Some Options', 'atr-random-sku-for-woocommerce' ),
-					'description'	=> __( 'A standard set of radio buttons.', 'atr-random-sku-for-woocommerce' ),
-					'type'			=> 'radio',
-					'options'		=> array( 'superman' => 'Superman', 'batman' => 'Batman', 'ironman' => 'Iron Man' ),
-					'default'		=> 'batman'
-				),
-				array(
-					'id' 			=> 'multiple_checkboxes',
-					'label'			=> __( 'Some Items', 'atr-random-sku-for-woocommerce' ),
-					'description'	=> __( 'You can select multiple items and they will be stored as an array.', 'atr-random-sku-for-woocommerce' ),
-					'type'			=> 'checkbox_multi',
-					'options'		=> array( 'square' => 'Square', 'circle' => 'Circle', 'rectangle' => 'Rectangle', 'triangle' => 'Triangle' ),
-					'default'		=> array( 'circle', 'triangle' )
-				)
+					'placeholder'           => __( '8', 'wordpress-plugin-template' )
+				),                               
+                            
+                          
+
 			)
 		);
 
-		$settings['extra'] = array(
-			'title'					=> __( 'Extra', 'atr-random-sku-for-woocommerce' ),
-			'description'			=> __( 'These are some extra input fields that maybe aren\'t as common as the others.', 'atr-random-sku-for-woocommerce' ),
-			'fields'				=> array(
-				array(
-					'id' 			=> 'number_field',
-					'label'			=> __( 'A Number' , 'atr-random-sku-for-woocommerce' ),
-					'description'	=> __( 'This is a standard number field - if this field contains anything other than numbers then the form will not be submitted.', 'atr-random-sku-for-woocommerce' ),
-					'type'			=> 'number',
-					'default'		=> '',
-					'placeholder'	=> __( '42', 'atr-random-sku-for-woocommerce' )
-				),
-				array(
-					'id' 			=> 'colour_picker',
-					'label'			=> __( 'Pick a colour', 'atr-random-sku-for-woocommerce' ),
-					'description'	=> __( 'This uses WordPress\' built-in colour picker - the option is stored as the colour\'s hex code.', 'atr-random-sku-for-woocommerce' ),
-					'type'			=> 'color',
-					'default'		=> '#21759B'
-				),
-				array(
-					'id' 			=> 'an_image',
-					'label'			=> __( 'An Image' , 'atr-random-sku-for-woocommerce' ),
-					'description'	=> __( 'This will upload an image to your media library and store the attachment ID in the option field. Once you have uploaded an imge the thumbnail will display above these buttons.', 'atr-random-sku-for-woocommerce' ),
-					'type'			=> 'image',
-					'default'		=> '',
-					'placeholder'	=> ''
-				),
-				array(
-					'id' 			=> 'multi_select_box',
-					'label'			=> __( 'A Multi-Select Box', 'atr-random-sku-for-woocommerce' ),
-					'description'	=> __( 'A standard multi-select box - the saved data is stored as an array.', 'atr-random-sku-for-woocommerce' ),
-					'type'			=> 'select_multi',
-					'options'		=> array( 'linux' => 'Linux', 'mac' => 'Mac', 'windows' => 'Windows' ),
-					'default'		=> array( 'linux' )
-				)
-			)
-		);
+
 
 		$settings = apply_filters( $this->parent->_token . '_settings_fields', $settings );
 
@@ -229,13 +156,13 @@ class ATR_random_sku_for_Woocommerce_Settings {
 
 			// Check posted/selected tab
 			$current_section = '';
-			if ( isset( $_POST['tab'] ) && $_POST['tab'] ) {
-				$current_section = $_POST['tab'];
-			} else {
-				if ( isset( $_GET['tab'] ) && $_GET['tab'] ) {
-					$current_section = $_GET['tab'];
-				}
-			}
+//			if ( isset( $_POST['tab'] ) && $_POST['tab'] ) {
+//				$current_section = $_POST['tab'];
+//			} else {
+//				if ( isset( $_GET['tab'] ) && $_GET['tab'] ) {
+//					$current_section = $_GET['tab'];
+//				}
+//			}
 
 			foreach ( $this->settings as $section => $data ) {
 
@@ -258,6 +185,7 @@ class ATR_random_sku_for_Woocommerce_Settings {
 
 					// Add field to page
 					add_settings_field( $field['id'], $field['label'], array( $this->parent->admin, 'display_field' ), $this->parent->_token . '_settings', $section, array( 'field' => $field, 'prefix' => $this->base ) );
+
 				}
 
 				if ( ! $current_section ) break;
@@ -280,45 +208,45 @@ class ATR_random_sku_for_Woocommerce_Settings {
 		$html = '<div class="wrap" id="' . $this->parent->_token . '_settings">' . "\n";
 			$html .= '<h2>' . __( 'ATR random sku for Woocommerce Settings' , 'atr-random-sku-for-woocommerce' ) . '</h2>' . "\n";
 
-//			$tab = '';
-//			if ( isset( $_GET['tab'] ) && $_GET['tab'] ) {
-//				$tab .= $_GET['tab'];
-//			}
-//
-//			// Show page tabs
-//			if ( is_array( $this->settings ) && 1 < count( $this->settings ) ) {
-//
-//				$html .= '<h2 class="nav-tab-wrapper">' . "\n";
-//
-//				$c = 0;
-//				foreach ( $this->settings as $section => $data ) {
-//
-//					// Set tab class
-//					$class = 'nav-tab';
-//					if ( ! isset( $_GET['tab'] ) ) {
-//						if ( 0 == $c ) {
-//							$class .= ' nav-tab-active';
-//						}
-//					} else {
-//						if ( isset( $_GET['tab'] ) && $section == $_GET['tab'] ) {
-//							$class .= ' nav-tab-active';
-//						}
-//					}
-//
-//					// Set tab link
-//					$tab_link = add_query_arg( array( 'tab' => $section ) );
-//					if ( isset( $_GET['settings-updated'] ) ) {
-//						$tab_link = remove_query_arg( 'settings-updated', $tab_link );
-//					}
-//
-//					// Output tab
-//					$html .= '<a href="' . $tab_link . '" class="' . esc_attr( $class ) . '">' . esc_html( $data['title'] ) . '</a>' . "\n";
-//
-//					++$c;
-//				}
-//
-//				$html .= '</h2>' . "\n";
-//			}
+			$tab = '';
+			if ( isset( $_GET['tab'] ) && $_GET['tab'] ) {
+				$tab .= $_GET['tab'];
+			}
+
+			// Show page tabs
+			if ( is_array( $this->settings ) && 1 < count( $this->settings ) ) {
+
+				$html .= '<h2 class="nav-tab-wrapper">' . "\n";
+
+				$c = 0;
+				foreach ( $this->settings as $section => $data ) {
+
+					// Set tab class
+					$class = 'nav-tab';
+					if ( ! isset( $_GET['tab'] ) ) {
+						if ( 0 == $c ) {
+							$class .= ' nav-tab-active';
+						}
+					} else {
+						if ( isset( $_GET['tab'] ) && $section == $_GET['tab'] ) {
+							$class .= ' nav-tab-active';
+						}
+					}
+
+					// Set tab link
+					$tab_link = add_query_arg( array( 'tab' => $section ) );
+					if ( isset( $_GET['settings-updated'] ) ) {
+						$tab_link = remove_query_arg( 'settings-updated', $tab_link );
+					}
+
+					// Output tab
+					$html .= '<a href="' . $tab_link . '" class="' . esc_attr( $class ) . '">' . esc_html( $data['title'] ) . '</a>' . "\n";
+
+					++$c;
+				}
+
+				$html .= '</h2>' . "\n";
+			}
 
 			$html .= '<form method="post" action="options.php" enctype="multipart/form-data">' . "\n";
 
@@ -327,7 +255,6 @@ class ATR_random_sku_for_Woocommerce_Settings {
 				settings_fields( $this->parent->_token . '_settings' );
 				do_settings_sections( $this->parent->_token . '_settings' );
 				$html .= ob_get_clean();
-
 				$html .= '<p class="submit">' . "\n";
 					$html .= '<input type="hidden" name="tab" value="' . esc_attr( $tab ) . '" />' . "\n";
 					$html .= '<input name="Submit" type="submit" class="button-primary" value="' . esc_attr( __( 'Save Settings' , 'atr-random-sku-for-woocommerce' ) ) . '" />' . "\n";
